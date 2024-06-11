@@ -1,5 +1,6 @@
 import re
 from typing import Callable, List
+from itertools import groupby
 
 from langchain_community.document_loaders.parsers.language.code_segmenter import (
     CodeSegmenter,
@@ -35,6 +36,7 @@ class CobolSegmenter(CodeSegmenter):
 
     def _process_lines(self, func: Callable) -> List[str]:
         """A generic function to process COBOL lines based on provided func."""
+        line_ranges = []
         elements: List[str] = []
         start_idx = None
         inside_relevant_section = False
@@ -49,13 +51,14 @@ class CobolSegmenter(CodeSegmenter):
             ):
                 if start_idx is not None:
                     func(elements, start_idx, i)
+                    line_ranges.append((start_idx, i - 1))
                 start_idx = i
 
         # Handle the last element if exists
         if start_idx is not None:
             func(elements, start_idx, len(self.source_lines))
 
-        return elements
+        return line_ranges, elements
 
     def extract_functions_classes(self) -> List[str]:
         def extract_func(elements: List[str], start_idx: int, end_idx: int) -> None:
@@ -64,13 +67,14 @@ class CobolSegmenter(CodeSegmenter):
         return self._process_lines(extract_func)
 
     def simplify_code(self) -> str:
+        line_numbers = []
         simplified_lines: List[str] = []
         inside_relevant_section = False
         omitted_code_added = (
             False  # To track if "* OMITTED CODE *" has been added after the last header
         )
 
-        for line in self.source_lines:
+        for idx, line in enumerate(self.source_lines):
             is_header = (
                 "PROCEDURE DIVISION" in line
                 or "DATA DIVISION" in line
@@ -89,10 +93,12 @@ class CobolSegmenter(CodeSegmenter):
                 if is_header:
                     # Add header and reset the omitted code added flag
                     simplified_lines.append(line)
+                    line_numbers.append(idx + 1)
                 elif not omitted_code_added:
                     # Add omitted code comment only if it hasn't been added directly
                     # after the last header
                     simplified_lines.append("* OMITTED CODE *")
                     omitted_code_added = True
+                    line_numbers.append(idx + 1)
 
-        return "\n".join(simplified_lines)
+        return line_numbers, "\n".join(simplified_lines)

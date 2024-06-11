@@ -31,10 +31,10 @@ hello("Hello!")"""
 
     def test_extract_functions_classes(self) -> None:
         segmenter = PythonSegmenter(self.example_code)
-        extracted_code = segmenter.extract_functions_classes()
+        _, extracted_code = segmenter.extract_functions_classes()
         self.assertEqual(extracted_code, self.expected_extracted_code)
 
     def test_simplify_code(self) -> None:
         segmenter = PythonSegmenter(self.example_code)
-        simplified_code = segmenter.simplify_code()
+        _, simplified_code = segmenter.simplify_code()
         self.assertEqual(simplified_code, self.expected_simplified_code)

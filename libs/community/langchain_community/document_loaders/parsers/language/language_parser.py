@@ -219,21 +219,26 @@ class LanguageParser(BaseBlobParser):
                 },
             )
             return
-
-        for functions_classes in segmenter.extract_functions_classes():
+        
+        for line_range, functions_classes in zip(*segmenter.extract_functions_classes()):
             yield Document(
                 page_content=functions_classes,
                 metadata={
                     "source": blob.source,
                     "content_type": "functions_classes",
                     "language": language,
+                    "line_start": line_range[0],
+                    "line_end": line_range[1],
                 },
             )
+
+        line_numbers, page_content = segmenter.simplify_code()
         yield Document(
-            page_content=segmenter.simplify_code(),
+            page_content=page_content,
             metadata={
                 "source": blob.source,
                 "content_type": "simplified_code",
                 "language": language,
+                "line_numbers": line_numbers
             },
         )

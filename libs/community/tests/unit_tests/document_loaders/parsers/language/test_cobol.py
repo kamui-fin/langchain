@@ -21,7 +21,7 @@ A100-PROCESS-PARA.
 def test_extract_functions_classes() -> None:
     """Test that functions and classes are extracted correctly."""
     segmenter = CobolSegmenter(EXAMPLE_CODE)
-    extracted_code = segmenter.extract_functions_classes()
+    _, extracted_code = segmenter.extract_functions_classes()
     assert extracted_code == [
         "A000-INITIALIZE-PARA.\n    "
         "DISPLAY 'Initialization Paragraph'.\n    "
@@ -45,5 +45,5 @@ def test_simplify_code() -> None:
         "* OMITTED CODE *\n"
     )
     segmenter = CobolSegmenter(EXAMPLE_CODE)
-    simplified_code = segmenter.simplify_code()
+    _, simplified_code = segmenter.simplify_code()
     assert simplified_code.strip() == expected_simplified_code.strip()

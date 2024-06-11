@@ -39,6 +39,7 @@ class JavaScriptSegmenter(CodeSegmenter):
 
         tree = esprima.parseScript(self.code, loc=True)
         functions_classes = []
+        line_ranges = []
 
         for node in tree.body:
             if isinstance(
@@ -46,8 +47,9 @@ class JavaScriptSegmenter(CodeSegmenter):
                 (esprima.nodes.FunctionDeclaration, esprima.nodes.ClassDeclaration),
             ):
                 functions_classes.append(self._extract_code(node))
+                line_ranges.append((node.loc.start.line - 1, node.loc.end.line - 1))
 
-        return functions_classes
+        return line_ranges, functions_classes
 
     def simplify_code(self) -> str:
         import esprima
@@ -56,6 +58,7 @@ class JavaScriptSegmenter(CodeSegmenter):
         simplified_lines = self.source_lines[:]
 
         indices_to_del: List[Tuple[int, int]] = []
+        line_numbers = list(range(1, len(self.source_lines) + 1))
         for node in tree.body:
             if isinstance(
                 node,
@@ -68,5 +71,6 @@ class JavaScriptSegmenter(CodeSegmenter):
 
         for start, end in reversed(indices_to_del):
             del simplified_lines[start + 0 : end]
-
-        return "\n".join(line for line in simplified_lines)
+            del line_numbers[start: end]
+        
+        return line_numbers, "\n".join(line for line in simplified_lines)

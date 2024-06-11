@@ -28,18 +28,20 @@ class PythonSegmenter(CodeSegmenter):
     def extract_functions_classes(self) -> List[str]:
         tree = ast.parse(self.code)
         functions_classes = []
-
+        line_ranges = []
         for node in ast.iter_child_nodes(tree):
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
                 functions_classes.append(self._extract_code(node))
+                line_ranges.append((node.lineno, node.end_lineno))
 
-        return functions_classes
+        return line_ranges, functions_classes
 
     def simplify_code(self) -> str:
         tree = ast.parse(self.code)
         simplified_lines = self.source_lines[:]
 
         indices_to_del: List[Tuple[int, int]] = []
+        line_numbers = list(range(1, len(self.source_lines) + 1))
         for node in ast.iter_child_nodes(tree):
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
                 start, end = node.lineno - 1, node.end_lineno
@@ -49,5 +51,6 @@ class PythonSegmenter(CodeSegmenter):
 
         for start, end in reversed(indices_to_del):
             del simplified_lines[start + 0 : end]
+            del line_numbers[start: end]
 
-        return "\n".join(simplified_lines)
+        return line_numbers, "\n".join(simplified_lines)

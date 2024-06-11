@@ -44,6 +44,7 @@ class TreeSitterSegmenter(CodeSegmenter):
         captures = query.captures(tree.root_node)
 
         processed_lines = set()
+        line_ranges = []
         chunks = []
 
         for node, name in captures:
@@ -57,8 +58,9 @@ class TreeSitterSegmenter(CodeSegmenter):
             processed_lines.update(lines)
             chunk_text = node.text.decode("UTF-8")
             chunks.append(chunk_text)
+            line_ranges.append((start_line, end_line))
 
-        return chunks
+        return chunks, line_ranges
 
     def simplify_code(self) -> str:
         language = self.get_language()
@@ -69,6 +71,7 @@ class TreeSitterSegmenter(CodeSegmenter):
         processed_lines = set()
 
         simplified_lines = self.source_lines[:]
+        line_numbers = list(range(1, len(self.source_lines) + 1))
         for node, name in query.captures(tree.root_node):
             start_line = node.start_point[0]
             end_line = node.end_point[0]
@@ -86,7 +89,9 @@ class TreeSitterSegmenter(CodeSegmenter):
 
             processed_lines.update(lines)
 
-        return "\n".join(line for line in simplified_lines if line is not None)
+            del line_numbers[start_line + 1: end_line + 1]
+
+        return line_numbers, "\n".join(line for line in simplified_lines if line is not None)
 
     def get_parser(self) -> "Parser":
         from tree_sitter import Parser
